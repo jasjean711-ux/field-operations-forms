@@ -7,6 +7,7 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -734,6 +735,10 @@
   </div>
 
   <script>
+    const SUPABASE_URL = 'https://khhvwjvajqigdsnbnzui.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaHZ3anZvajFpZ2RzbmJuenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNzk3NjEsImV4cCI6MjA4Njk1NTc2MX0.4ohysH621jBmQZUNV24FlLdXbCUNP-3C0pJmrcoR3TI';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // Initialize default values and UI controls on window load
     window.onload = function () {
       // Set default current date-time
@@ -843,29 +848,125 @@
       }
     }
 
-    // Ticket Form Submission Handler
-    function submitTicket() {
+    function getCheckedValue(name) {
+      return document.querySelector(`input[name="${name}"]:checked`)?.value || null;
+    }
+
+    async function signInIfNeeded() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) return session.user;
+
+      const email = window.prompt('Enter your technician email:');
+      const password = window.prompt('Enter your password:');
+      if (!email || !password) throw new Error('Sign-in is required before saving a ticket.');
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return data.user;
+    }
+
+    function buildTicketPayload(user) {
       const techName = document.getElementById('technicianName').value.trim();
       const ticketNum = document.getElementById('ticketNumber').value.trim();
       const status = document.getElementById('ticketStatus').value;
+      const propertyType = document.getElementById('propertyType').value;
+      const unitId = document.getElementById('unitId').value.trim();
+      const terminationPoint = document.getElementById('terminationPoint').value;
+      const dailyRemarks = document.getElementById('dailyRemarks').value.trim();
 
-      if (!techName || !ticketNum) {
+      if (!techName || !ticketNum || !document.getElementById('company').value) {
         alert('Please fill out all required fields: Technician Name and Ticket Number.');
-        return;
+        return null;
       }
 
-      // Populate Modal values
-      document.getElementById('modalTicketNum').innerText = ticketNum;
-      document.getElementById('modalTechName').innerText = techName;
-      document.getElementById('modalStatus').innerText = status;
+      return {
+        created_by: user.id,
+        company: document.getElementById('company').value,
+        technician_name: techName,
+        ticket_number: ticketNum,
+        ticket_status: status,
+        property_type: propertyType,
+        unit_number: unitId,
+        location: [propertyType, unitId, terminationPoint].filter(Boolean).join(' - '),
+        network_node: terminationPoint,
+        backbone_type: document.getElementById('backboneType').value,
+        intercom_status: getCheckedValue('intercomStatus'),
+        intercom_fault: document.getElementById('intercomFault').value,
+        wifi_status: getCheckedValue('wifiStatus'),
+        wifi_fault: document.getElementById('wifiFault').value,
+        cctv_status: getCheckedValue('cctvStatus'),
+        cctv_fault: document.getElementById('cctvFault').value,
+        dstv_status: getCheckedValue('dstvStatus'),
+        dstv_equipment_type: document.getElementById('dstvEquipmentType').value,
+        dstv_fault: document.getElementById('dstvFault').value,
+        dstv_error_code: document.getElementById('dstvErrorCode').value,
+        access_control_status: getCheckedValue('accessStatus'),
+        access_control_fault: document.getElementById('accessFault').value,
+        overall_condition: document.getElementById('overallCondition').value,
+        daily_remarks: dailyRemarks,
+        job_description: dailyRemarks,
+        updated_at: new Date().toISOString()
+      };
+    }
 
-      // Show Modal
-      const modal = document.getElementById('successModal');
-      modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modal.querySelector('div').classList.remove('scale-95');
-      }, 10);
+    // Create a ticket or update the existing ticket number, then record its status history.
+    async function submitTicket() {
+      try {
+        const user = await signInIfNeeded();
+        const payload = buildTicketPayload(user);
+        if (!payload) return;
+
+        const { data: existingTicket, error: lookupError } = await supabaseClient
+          .from('tickets')
+          .select('id')
+          .eq('ticket_number', payload.ticket_number)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+
+        let savedTicket;
+        if (existingTicket) {
+          const { data, error } = await supabaseClient
+            .from('tickets')
+            .update(payload)
+            .eq('id', existingTicket.id)
+            .select('id, ticket_number')
+            .single();
+          if (error) throw error;
+          savedTicket = data;
+        } else {
+          const { data, error } = await supabaseClient
+            .from('tickets')
+            .insert(payload)
+            .select('id, ticket_number')
+            .single();
+          if (error) throw error;
+          savedTicket = data;
+        }
+
+        const { error: historyError } = await supabaseClient
+          .from('ticket_updates')
+          .insert({
+            ticket_id: savedTicket.id,
+            status: payload.ticket_status,
+            notes: payload.daily_remarks,
+            updated_by: user.id
+          });
+        if (historyError) throw historyError;
+
+        document.getElementById('modalTicketNum').innerText = payload.ticket_number;
+        document.getElementById('modalTechName').innerText = payload.technician_name;
+        document.getElementById('modalStatus').innerText = payload.ticket_status;
+
+        const modal = document.getElementById('successModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          modal.querySelector('div').classList.remove('scale-95');
+        }, 10);
+      } catch (error) {
+        console.error('Ticket submission failed:', error);
+        alert(`Ticket could not be saved: ${error.message}`);
+      }
     }
 
     // Close Modal Handler
