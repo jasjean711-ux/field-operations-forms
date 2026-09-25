@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Daily Ticket Report Form</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Custom scrollbar for modern UI */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Print styles optimization */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-card {
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      input, select, textarea {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border: 1px solid #94a3b8 !important;
+      }
+      .status-pill {
+        border: 1px solid #64748b !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-900 text-slate-100 antialiased selection:bg-brand-500 selection:text-white pb-12">
+
+  <!-- Top Navigation / Header Bar -->
+  <header class="sticky top-0 z-30 bg-slate-800/90 backdrop-blur border-b border-slate-700/80 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-brand-600 rounded-lg text-white shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-network-wired text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            IT & Network Operations
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30">Daily Ticket</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Fiber Backbone & Multi-Service Maintenance Form</p>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center gap-2 no-print">
+        <button type="button" onclick="resetForm()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span class="hidden md:inline">Reset</span>
+        </button>
+        <button type="button" onclick="window.print()" class="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-print text-brand-400"></i>
+          <span>Print / Export PDF</span>
+        </button>
+        <button type="button" onclick="submitTicket()" class="px-4 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-lg shadow-md shadow-brand-600/30 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Submit Report</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 flex-1 w-full space-y-6">
+
+    <!-- Form Container -->
+    <form id="ticketReportForm" onsubmit="event.preventDefault(); submitTicket();">
+
+      <!-- SECTION 1: HEADER & TICKET META INFO -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-6">
+        <div class="flex items-center justify-between border-b border-slate-700/70 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-ticket text-brand-400"></i>
+            <h2 class="text-base font-semibold text-white">1. Ticket & Technician Meta Info</h2>
+          </div>
+          <span class="text-xs text-slate-400">System Log ID: <span id="logTimestamp" class="font-mono text-slate-300">AUTO-GEN</span></span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Technician Name -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Technician Name <span class="text-rose-400">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-user text-xs"></i>
+              </span>
+              <input type="text" id="technicianName" required placeholder="e.g. John Doe"
+                class="w-full pl-8 pr-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-white placeholder-slate-500 transition">
+            </div>
+          </div>
+
+          <!-- Date & Time -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Date & Time <span class="text-rose-400">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-calendar-day text-xs"></i>
+              </span>
+              <input type="datetime-local" id="dateTime" required
+                class="w-full pl-8 pr-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-white transition">
+            </div>
+          </div>
+
+          <!-- Ticket Number -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Ticket Number <span class="text-rose-400">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-hashtag text-xs"></i>
+              </span>
+              <input type="text" id="ticketNumber" required placeholder="#TK-2026-089"
+                class="w-full pl-8 pr-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-white font-mono placeholder-slate-500 transition">
+            </div>
+          </div>
+
+          <!-- Ticket Status -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Ticket Status <span class="text-rose-400">*</span></label>
+            <div class="relative">
+              <select id="ticketStatus" required onchange="updateStatusBadge(this.value)"
+                class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-white transition appearance-none">
+                <option value="Assigned">Assigned</option>
+                <option value="Seen">Seen</option>
+                <option value="Open" selected>Open</option>
+                <option value="Quotation Required">Quotation Required</option>
+                <option value="Access Required">Access Required</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Quotation Approved">Quotation Approved</option>
+                <option value="Closed / Resolved">Closed / Resolved</option>
+              </select>
+              <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </span>
+            </div>
+            <div class="mt-1.5 flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400">Status Badge:</span>
+              <span id="statusBadge" class="status-pill inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Open
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: LOCATION & TERMINATION POINT -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-6">
+        <div class="flex items-center gap-2 border-b border-slate-700/70 pb-3 mb-4">
+          <i class="fa-solid fa-location-dot text-brand-400"></i>
+          <h2 class="text-base font-semibold text-white">2. Location & Fiber Backbone Link</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Property Type -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Property Type</label>
+            <select id="propertyType"
+              class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white transition">
+              <option value="Apartment">Apartment</option>
+              <option value="Maison">Maison</option>
+              <option value="Villa">Villa</option>
+            </select>
+          </div>
+
+          <!-- Unit / ID Number -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Unit / ID Number</label>
+            <input type="text" id="unitId" placeholder="e.g. Villa 12 / Apt 3B"
+              class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500 transition">
+          </div>
+
+          <!-- Network Node / Termination Point -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Network Termination Point</label>
+            <select id="terminationPoint"
+              class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white transition">
+              <option value="Main IT Room">Main IT Room</option>
+              <option value="Apartment DB" selected>Apartment DB</option>
+              <option value="Outdoor Data Kiosk">Outdoor Data Kiosk</option>
+              <option value="Marina Box">Marina Box</option>
+            </select>
+          </div>
+
+          <!-- Backbone Link Type -->
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Backbone Link Type</label>
+            <select id="backboneType"
+              class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white transition">
+              <option value="Single-Mode Fiber (SMF)">Single-Mode Fiber (SMF)</option>
+              <option value="Multi-Mode Fiber (MMF)">Multi-Mode Fiber (MMF)</option>
+              <option value="CAT6 UTP Cable">CAT6 UTP Cable</option>
+              <option value="SMF + MMF Hybrid">SMF + MMF Hybrid</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: SERVICE DIAGNOSTICS & FAULT CLASSIFICATION -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-6">
+        <div class="flex items-center justify-between border-b border-slate-700/70 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-microchip text-brand-400"></i>
+            <h2 class="text-base font-semibold text-white">3. Service Diagnostics & Fault Classification</h2>
+          </div>
+          <span class="text-xs text-slate-400 hidden sm:inline">Select status & diagnostic details per service</span>
+        </div>
+
+        <div class="space-y-4">
+
+          <!-- A. Intercom Service -->
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 transition hover:border-slate-600">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                  <i class="fa-solid fa-phone-volume"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Intercom Service</h3>
+                  <p class="text-[11px] text-slate-400">Grandstream 8/2 Port Gateway to Handset Link</p>
+                </div>
+              </div>
+
+              <!-- Status Radio Group -->
+              <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700/80">
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-emerald-600 has-[:checked]:text-white">
+                  <input type="radio" name="intercomStatus" value="Active" class="hidden" onchange="toggleServiceCard('intercom', 'Active')">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-rose-600 has-[:checked]:text-white">
+                  <input type="radio" name="intercomStatus" value="Faulty" class="hidden" checked onchange="toggleServiceCard('intercom', 'Faulty')">
+                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Faulty
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-slate-600 has-[:checked]:text-white">
+                  <input type="radio" name="intercomStatus" value="N/A" class="hidden" onchange="toggleServiceCard('intercom', 'N/A')">
+                  <i class="fa-solid fa-minus text-[10px]"></i> N/A
+                </label>
+              </div>
+            </div>
+
+            <!-- Detail Options -->
+            <div id="intercomDetailsContainer" class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Intercom Fault Detail</label>
+                <select id="intercomFault" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / Normal Operation">None / Normal Operation</option>
+                  <option value="Wrong Settings">Wrong Settings</option>
+                  <option value="Damage">Damage</option>
+                  <option value="Patch Panel Port Faulty">Patch Panel Port Faulty</option>
+                  <option value="Grandstream 2-Port Faulty">Grandstream 2-Port Faulty</option>
+                  <option value="Grandstream 8-Port Faulty" selected>Grandstream 8-Port Faulty</option>
+                  <option value="Media Converter Faulty">Media Converter Faulty</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Specific Location / Notes</label>
+                <input type="text" id="intercomNotes" placeholder="e.g. Handset in Bedroom 2 not ringing" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- B. Wi-Fi & Internet Service -->
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 transition hover:border-slate-600">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-sky-500/10 text-sky-400 rounded-lg">
+                  <i class="fa-solid fa-wifi"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Wi-Fi & Internet Service</h3>
+                  <p class="text-[11px] text-slate-400">Access Point & Lounge/Bedroom CAT6 Outlets</p>
+                </div>
+              </div>
+
+              <!-- Status Radio Group -->
+              <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700/80">
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-emerald-600 has-[:checked]:text-white">
+                  <input type="radio" name="wifiStatus" value="Active" class="hidden" onchange="toggleServiceCard('wifi', 'Active')">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-rose-600 has-[:checked]:text-white">
+                  <input type="radio" name="wifiStatus" value="Faulty" class="hidden" checked onchange="toggleServiceCard('wifi', 'Faulty')">
+                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Faulty
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-slate-600 has-[:checked]:text-white">
+                  <input type="radio" name="wifiStatus" value="N/A" class="hidden" onchange="toggleServiceCard('wifi', 'N/A')">
+                  <i class="fa-solid fa-minus text-[10px]"></i> N/A
+                </label>
+              </div>
+            </div>
+
+            <!-- Detail Options -->
+            <div id="wifiDetailsContainer" class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Wi-Fi / Internet Fault Detail</label>
+                <select id="wifiFault" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / Normal Operation">None / Normal Operation</option>
+                  <option value="Network Cable Damage">Network Cable Damage</option>
+                  <option value="Wrongly Connected">Wrongly Connected</option>
+                  <option value="Hardware Faulty">Hardware Faulty</option>
+                  <option value="Data Module Faulty" selected>Data Module Faulty</option>
+                  <option value="Network Cable Issue">Network Cable Issue</option>
+                  <option value="Patch Panel Port Faulty">Patch Panel Port Faulty</option>
+                  <option value="Network Switch Faulty">Network Switch Faulty</option>
+                  <option value="Media Converter Faulty">Media Converter Faulty</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Specific Outlet / AP Location</label>
+                <input type="text" id="wifiNotes" placeholder="e.g. Lounge CAT6 module loose wire" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- C. CCTV Surveillance -->
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 transition hover:border-slate-600">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                  <i class="fa-solid fa-video"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">CCTV Surveillance</h3>
+                  <p class="text-[11px] text-slate-400">Cameras & PoE Switch Infrastructure</p>
+                </div>
+              </div>
+
+              <!-- Status Radio Group -->
+              <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700/80">
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-emerald-600 has-[:checked]:text-white">
+                  <input type="radio" name="cctvStatus" value="Active" class="hidden" checked onchange="toggleServiceCard('cctv', 'Active')">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-rose-600 has-[:checked]:text-white">
+                  <input type="radio" name="cctvStatus" value="Faulty" class="hidden" onchange="toggleServiceCard('cctv', 'Faulty')">
+                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Faulty
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-slate-600 has-[:checked]:text-white">
+                  <input type="radio" name="cctvStatus" value="N/A" class="hidden" onchange="toggleServiceCard('cctv', 'N/A')">
+                  <i class="fa-solid fa-minus text-[10px]"></i> N/A
+                </label>
+              </div>
+            </div>
+
+            <!-- Detail Options -->
+            <div id="cctvDetailsContainer" class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">CCTV Fault Detail</label>
+                <select id="cctvFault" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / Normal Operation" selected>None / Normal Operation</option>
+                  <option value="Camera Faulty">Camera Faulty</option>
+                  <option value="Media Converter Faulty">Media Converter Faulty</option>
+                  <option value="Multimode Fiber Patch Cord Faulty">Multimode Fiber Patch Cord Faulty</option>
+                  <option value="Network PoE Switch 8-Port Faulty">Network PoE Switch 8-Port Faulty</option>
+                  <option value="Network PoE Switch 24-Port Faulty">Network PoE Switch 24-Port Faulty</option>
+                  <option value="RJ45 Connector Faulty">RJ45 Connector Faulty</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Camera ID / Channel</label>
+                <input type="text" id="cctvNotes" placeholder="e.g. Cam 04 Outdoor Marina" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- D. DSTV / Satellite Service -->
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 transition hover:border-slate-600">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg">
+                  <i class="fa-solid fa-tv"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">DSTV / Satellite Service</h3>
+                  <p class="text-[11px] text-slate-400">Fiber Transmitter, Optical Converter, Splitter & Decoders</p>
+                </div>
+              </div>
+
+              <!-- Status Radio Group -->
+              <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700/80">
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-emerald-600 has-[:checked]:text-white">
+                  <input type="radio" name="dstvStatus" value="Active" class="hidden" onchange="toggleServiceCard('dstv', 'Active')">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-rose-600 has-[:checked]:text-white">
+                  <input type="radio" name="dstvStatus" value="Faulty" class="hidden" checked onchange="toggleServiceCard('dstv', 'Faulty')">
+                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Faulty
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-slate-600 has-[:checked]:text-white">
+                  <input type="radio" name="dstvStatus" value="N/A" class="hidden" onchange="toggleServiceCard('dstv', 'N/A')">
+                  <i class="fa-solid fa-minus text-[10px]"></i> N/A
+                </label>
+              </div>
+            </div>
+
+            <!-- Detail Options -->
+            <div id="dstvDetailsContainer" class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Hardware & Cable Faults</label>
+                <select id="dstvFault" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / Normal Operation">None / Normal Operation</option>
+                  <option value="Satellite Setting Wrong">Satellite Setting Wrong</option>
+                  <option value="Decoder Faulty">Decoder Faulty</option>
+                  <option value="Power Adapter Faulty">Power Adapter Faulty</option>
+                  <option value="Coaxial Cable Missing">Coaxial Cable Missing</option>
+                  <option value="Coaxial Cable Damage">Coaxial Cable Damage</option>
+                  <option value="Coaxial Cable Wrongly Connected">Coaxial Cable Wrongly Connected</option>
+                  <option value="HDMI Cable Missing">HDMI Cable Missing</option>
+                  <option value="HDMI Cable Faulty">HDMI Cable Faulty</option>
+                  <option value="Fiber Patch Cord Damage" selected>Fiber Patch Cord Damage</option>
+                  <option value="Optical Converter / Transmitter Faulty">Optical Converter / Transmitter Faulty</option>
+                  <option value="Splitter Faulty">Splitter Faulty</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">DSTV Error Code</label>
+                <select id="dstvErrorCode" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / No Error Code">None / No Error Code</option>
+                  <option value="E16 - Scrambled Service">E16 - Scrambled Service</option>
+                  <option value="E48 - No Signal" selected>E48 - No Signal</option>
+                  <option value="E30 - Scrambled (Activation Required)">E30 - Scrambled (Activation Required)</option>
+                  <option value="Other / Custom Error">Other / Custom Error Code</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Smartcard / Decoder Serial</label>
+                <input type="text" id="dstvNotes" placeholder="e.g. Decoder 4132-xxxx" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- E. Access Control Service -->
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 transition hover:border-slate-600">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                  <i class="fa-solid fa-id-card-clip"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Access Control Service</h3>
+                  <p class="text-[11px] text-slate-400">Facial Recognition Tablets, Power Supplies & Locks</p>
+                </div>
+              </div>
+
+              <!-- Status Radio Group -->
+              <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700/80">
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-emerald-600 has-[:checked]:text-white">
+                  <input type="radio" name="accessStatus" value="Active" class="hidden" checked onchange="toggleServiceCard('access', 'Active')">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-rose-600 has-[:checked]:text-white">
+                  <input type="radio" name="accessStatus" value="Faulty" class="hidden" onchange="toggleServiceCard('access', 'Faulty')">
+                  <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Faulty
+                </label>
+                <label class="cursor-pointer text-xs px-2.5 py-1 rounded transition flex items-center gap-1 text-slate-300 has-[:checked]:bg-slate-600 has-[:checked]:text-white">
+                  <input type="radio" name="accessStatus" value="N/A" class="hidden" onchange="toggleServiceCard('access', 'N/A')">
+                  <i class="fa-solid fa-minus text-[10px]"></i> N/A
+                </label>
+              </div>
+            </div>
+
+            <!-- Detail Options -->
+            <div id="accessDetailsContainer" class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Access Control Fault Detail</label>
+                <select id="accessFault" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="None / Normal Operation" selected>None / Normal Operation</option>
+                  <option value="Power Adapter Faulty">Power Adapter Faulty</option>
+                  <option value="Power Supply Faulty">Power Supply Faulty</option>
+                  <option value="Facial Tablet Faulty">Facial Tablet Faulty</option>
+                  <option value="Network Switch 8-Port Faulty">Network Switch 8-Port Faulty</option>
+                  <option value="Network Switch 24-Port Faulty">Network Switch 24-Port Faulty</option>
+                  <option value="Media Converter Faulty">Media Converter Faulty</option>
+                  <option value="Lock / Reader / Door Controller Faulty">Lock / Reader / Door Controller Faulty</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Door / Gate ID</label>
+                <input type="text" id="accessNotes" placeholder="e.g. Main Gate Pedestrian Entrance" class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 4: HARDWARE CONDITION & ACTION LOG -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/70 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked text-brand-400"></i>
+            <h2 class="text-base font-semibold text-white">4. Hardware Condition & Action Log</h2>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="text-xs text-slate-300 font-medium">Overall Condition:</label>
+            <select id="overallCondition" class="px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded-lg text-brand-300 font-medium focus:outline-none">
+              <option value="Faulty">Faulty</option>
+              <option value="Hardware Failure">Hardware Failure</option>
+              <option value="Wear and Tear">Wear and Tear</option>
+              <option value="Installed" selected>Installed / Serviced</option>
+              <option value="Replaced">Replaced</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dynamic Log Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase font-medium text-[10px]">
+              <tr>
+                <th class="p-2.5 rounded-l-lg">Component Description</th>
+                <th class="p-2.5">Location / Node</th>
+                <th class="p-2.5">Serial No / Port #</th>
+                <th class="p-2.5">Action Taken</th>
+                <th class="p-2.5 text-center no-print rounded-r-lg">Action</th>
+              </tr>
+            </thead>
+            <tbody id="hardwareLogTableBody" class="divide-y divide-slate-700/50">
+              <!-- Default Rows injected via JS on load -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3 flex justify-end no-print">
+          <button type="button" onclick="addHardwareLogRow()" class="px-3 py-1.5 text-xs font-medium text-brand-400 bg-brand-500/10 hover:bg-brand-500/20 rounded-lg border border-brand-500/30 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus text-xs"></i> Add Equipment Row
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 5: DAILY REMARKS & TASK SUMMARY -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-6">
+        <div class="flex items-center gap-2 border-b border-slate-700/70 pb-3 mb-4">
+          <i class="fa-solid fa-clipboard-list text-brand-400"></i>
+          <h2 class="text-base font-semibold text-white">5. Daily Remarks & End-of-Day Task Summary</h2>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">
+            Detailed Troubleshooting, Quotations Required & Work Done Notes
+          </label>
+          <textarea id="dailyRemarks" rows="4" placeholder="Type detailed tasks completed during shift, outstanding issues requiring quotation or access, fiber light levels measured, or recommendations..."
+            class="w-full p-3 text-xs bg-slate-900/90 border border-slate-700 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition leading-relaxed"></textarea>
+        </div>
+      </div>
+
+      <!-- SECTION 6: SIGN-OFF & VERIFICATION -->
+      <div class="print-card bg-slate-800 rounded-xl border border-slate-700/80 p-5 shadow-lg mb-8">
+        <div class="flex items-center gap-2 border-b border-slate-700/70 pb-3 mb-4">
+          <i class="fa-solid fa-file-signature text-brand-400"></i>
+          <h2 class="text-base font-semibold text-white">6. Sign-off & Completion Verification</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Customer / Access Representative -->
+          <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-700/60">
+            <label class="block text-xs font-medium text-slate-300 mb-2">Customer / Facility Representative Name</label>
+            <input type="text" id="customerSignName" placeholder="e.g. Mr. Robert Vance" class="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 mb-3">
+            <p class="text-[11px] text-slate-400 italic">Signature / Clearance Verified via Building Access Control</p>
+          </div>
+
+          <!-- Technician Sign-off -->
+          <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-700/60">
+            <label class="block text-xs font-medium text-slate-300 mb-2">Technician Digital Verification</label>
+            <input type="text" id="techSignature" placeholder="Type Full Name as Digital Sign" class="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-brand-500 mb-3">
+            <p class="text-[11px] text-slate-400 italic">By submitting, technician confirms all diagnostic values reported are accurate.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Action Bar (Non-Printable) -->
+      <div class="no-print flex flex-col sm:flex-row items-center justify-end gap-3 pt-2 border-t border-slate-800">
+        <button type="button" onclick="resetForm()" class="w-full sm:w-auto px-5 py-2.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition">
+          Clear Form
+        </button>
+        <button type="button" onclick="window.print()" class="w-full sm:w-auto px-5 py-2.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-600 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-print"></i> Print / Save PDF
+        </button>
+        <button type="submit" class="w-full sm:w-auto px-6 py-2.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> Submit Daily Ticket Report
+        </button>
+      </div>
+
+    </form>
+  </main>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-transform duration-300 mx-4">
+      <div class="text-center">
+        <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+          <i class="fa-solid fa-circle-check text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-1">Ticket Report Submitted</h3>
+        <p class="text-xs text-slate-400 mb-4">The daily maintenance log was successfully registered on the central system.</p>
+        
+        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/80 text-left text-xs text-slate-300 space-y-1.5 mb-5 font-mono">
+          <div class="flex justify-between"><span>Ticket #:</span> <span id="modalTicketNum" class="text-brand-400 font-bold"></span></div>
+          <div class="flex justify-between"><span>Tech Name:</span> <span id="modalTechName" class="text-white"></span></div>
+          <div class="flex justify-between"><span>Status:</span> <span id="modalStatus" class="text-emerald-400"></span></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="button" onclick="closeModal(); window.print();" class="flex-1 py-2 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition">
+            Print Copy
+          </button>
+          <button type="button" onclick="closeModal()" class="flex-1 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize default values and UI controls on window load
+    window.onload = function () {
+      // Set default current date-time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('dateTime').value = now.toISOString().slice(0, 16);
+
+      // Auto-generate Ticket ID log timestamp
+      const logId = 'LOG-' + Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('logTimestamp').innerText = logId;
+
+      // Populate default hardware log rows
+      initDefaultHardwareRows();
+    };
+
+    // Initialize Default Hardware Log Table Entries
+    function initDefaultHardwareRows() {
+      const defaultData = [
+        { desc: 'Grandstream 8-Port FXS Gateway', loc: 'Apartment DB', port: 'GS-08 / Port 3', action: 'Replaced' },
+        { desc: 'CAT6 Data Module RJ45', loc: 'Lounge Outlet', port: 'Module #2', action: 'Replaced' },
+        { desc: 'Yellow Fiber Patch Cord Simplex', loc: 'Outdoor Kiosk', port: 'ODF Port 04', action: 'Re-terminated' }
+      ];
+
+      const tbody = document.getElementById('hardwareLogTableBody');
+      tbody.innerHTML = '';
+      defaultData.forEach(row => addHardwareLogRow(row.desc, row.loc, row.port, row.action));
+    }
+
+    // Dynamic Hardware Table Row Adder
+    function addHardwareLogRow(desc = '', loc = '', port = '', action = 'Installed') {
+      const tbody = document.getElementById('hardwareLogTableBody');
+      const tr = document.createElement('tr');
+      tr.className = "hover:bg-slate-800/50 transition";
+
+      tr.innerHTML = `
+        <td class="p-2">
+          <input type="text" value="${desc}" placeholder="Component Name" class="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-brand-500">
+        </td>
+        <td class="p-2">
+          <input type="text" value="${loc}" placeholder="DB / Node" class="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-brand-500">
+        </td>
+        <td class="p-2">
+          <input type="text" value="${port}" placeholder="Serial / Port" class="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-brand-500">
+        </td>
+        <td class="p-2">
+          <select class="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-brand-500">
+            <option value="Installed" ${action === 'Installed' ? 'selected' : ''}>Installed</option>
+            <option value="Replaced" ${action === 'Replaced' ? 'selected' : ''}>Replaced</option>
+            <option value="Re-terminated" ${action === 'Re-terminated' ? 'selected' : ''}>Re-terminated</option>
+            <option value="Reconfigured" ${action === 'Reconfigured' ? 'selected' : ''}>Reconfigured</option>
+            <option value="Repaired" ${action === 'Repaired' ? 'selected' : ''}>Repaired</option>
+          </select>
+        </td>
+        <td class="p-2 text-center no-print">
+          <button type="button" onclick="removeRow(this)" class="p-1 text-rose-400 hover:text-rose-300 transition">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    }
+
+    // Remove Hardware Table Row
+    function removeRow(btn) {
+      const row = btn.closest('tr');
+      row.remove();
+    }
+
+    // Service Card Visual Active / Inactive Toggle
+    function toggleServiceCard(serviceKey, status) {
+      const container = document.getElementById(serviceKey + 'DetailsContainer');
+      if (!container) return;
+
+      if (status === 'Active' || status === 'N/A') {
+        container.classList.add('opacity-60');
+      } else {
+        container.classList.remove('opacity-60');
+      }
+    }
+
+    // Status Badge Color Dynamic Switcher
+    function updateStatusBadge(val) {
+      const badge = document.getElementById('statusBadge');
+      badge.innerText = val;
+
+      // Reset classes
+      badge.className = "status-pill inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ";
+
+      switch (val) {
+        case 'Closed / Resolved':
+          badge.className += "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+          break;
+        case 'Open':
+        case 'Assigned':
+          badge.className += "bg-amber-500/20 text-amber-300 border-amber-500/30";
+          break;
+        case 'Quotation Required':
+        case 'Quotation Approved':
+          badge.className += "bg-purple-500/20 text-purple-300 border-purple-500/30";
+          break;
+        case 'Access Required':
+          badge.className += "bg-rose-500/20 text-rose-300 border-rose-500/30";
+          break;
+        default:
+          badge.className += "bg-sky-500/20 text-sky-300 border-sky-500/30";
+      }
+    }
+
+    // Ticket Form Submission Handler
+    function submitTicket() {
+      const techName = document.getElementById('technicianName').value.trim();
+      const ticketNum = document.getElementById('ticketNumber').value.trim();
+      const status = document.getElementById('ticketStatus').value;
+
+      if (!techName || !ticketNum) {
+        alert('Please fill out all required fields: Technician Name and Ticket Number.');
+        return;
+      }
+
+      // Populate Modal values
+      document.getElementById('modalTicketNum').innerText = ticketNum;
+      document.getElementById('modalTechName').innerText = techName;
+      document.getElementById('modalStatus').innerText = status;
+
+      // Show Modal
+      const modal = document.getElementById('successModal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+      }, 10);
+    }
+
+    // Close Modal Handler
+    function closeModal() {
+      const modal = document.getElementById('successModal');
+      modal.classList.add('opacity-0');
+      modal.querySelector('div').classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    // Form Reset Handler
+    function resetForm() {
+      if (confirm('Are you sure you want to clear all form fields?')) {
+        document.getElementById('ticketReportForm').reset();
+        initDefaultHardwareRows();
+        
+        // Reset current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('dateTime').value = now.toISOString().slice(0, 16);
+        updateStatusBadge('Open');
+      }
+    }
+  </script>
+</body>
+</html>

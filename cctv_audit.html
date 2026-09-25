@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bank CCTV Audit Form</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #0284c7;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .section {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 20px;
+            margin-top: 0;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], select, textarea {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px; /* Prevents iOS auto-zoom */
+            background-color: #fff;
+            color: var(--text);
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .radio-item, .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        input[type="radio"], input[type="checkbox"] {
+            width: 22px;
+            height: 22px; /* Large tap targets for iPad */
+        }
+
+        .camera-card {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--secondary);
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .signature-area {
+            border: 1px dashed var(--border);
+            height: 120px;
+            background: #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
+
+        .submit-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .submit-btn {
+            background: #22c55e;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 16px 40px;
+            border: none;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏛️ Bank CCTV Site Audit Form</h1>
+
+    <form id="auditForm" onsubmit="event.preventDefault(); alert('Audit data saved locally! (In a live deployment, this would send to your server/database).');">
+        
+        <!-- 1. GENERAL INFO -->
+        <div class="section">
+            <h2>1. General Audit Information</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Auditor Name</label>
+                    <input type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>Date & Time</label>
+                    <input type="date" required id="currentDate">
+                </div>
+                <div class="form-group">
+                    <label>Branch Name / ID</label>
+                    <input type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>Branch Address</label>
+                    <input type="text" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. NETWORK & POWER -->
+        <div class="section">
+            <h2>2. Core Network & Power Redundancy</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Network Infrastructure</label>
+                    <div class="radio-group">
+                        <label class="radio-item"><input type="radio" name="network_type" value="vlan"> Dedicated CCTV VLAN</label>
+                        <label class="radio-item"><input type="radio" name="network_type" value="shared"> Shared Corporate Network</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Core Switch Models & Locations</label>
+                    <input type="text" placeholder="e.g. Cisco 24-Port PoE in Main Rack">
+                </div>
+                <div class="form-group">
+                    <label>Power Supply Redundancy (UPS)</label>
+                    <div class="radio-group">
+                        <label class="radio-item"><input type="radio" name="ups_present" value="yes"> UPS Present</label>
+                        <label class="radio-item"><input type="radio" name="ups_present" value="no"> No UPS Backup</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>UPS Runtime / Gen Backup</label>
+                    <input type="text" placeholder="e.g. 45 mins / Generator Linked">
+                </div>
+                <div class="form-group full-width">
+                    <label>Core Infrastructure Upload</label>
+                    <div class="file-upload">
+                        <label for="rack_pic">📸 Tap to Capture/Upload Switch & Rack Photo</label>
+                        <input type="file" id="rack_pic" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                        <img class="preview-img" id="preview_rack_pic">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Infrastructure Comments</label>
+                    <textarea placeholder="Notes regarding network topology, environment conditions, or rack space..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CAMERA AUDIT MATRIX -->
+        <div class="section">
+            <h2>3. Camera Location Audit Matrix</h2>
+            <div id="cameraContainer">
+                <!-- Dynamic Camera Cards insert here -->
+            </div>
+            <button type="button" class="add-btn" onclick="addCameraCard()">➕ Add Camera Location</button>
+        </div>
+
+        <!-- 4. SIGN OFF -->
+        <div class="section">
+            <h2>4. Audit Summary & Sign-off</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Auditor Digital Signature</label>
+                    <div class="signature-area">iPad Touch Sign Area</div>
+                </div>
+                <div class="form-group">
+                    <label>Branch Manager Sign-off</label>
+                    <div class="signature-area">iPad Touch Sign Area</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="submit-section">
+            <button type="submit" class="submit-btn">Submit Completed Audit</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Auto-populate today's date
+    document.getElementById('currentDate').valueAsDate = new Date();
+
+    let cameraCount = 0;
+
+    function addCameraCard() {
+        cameraCount++;
+        const container = document.getElementById('cameraContainer');
+        
+        const card = document.createElement('div');
+        card.className = 'camera-card';
+        card.id = `camera_card_${cameraCount}`;
+        
+        card.innerHTML = `
+            <button type="button" class="remove-btn" onclick="removeCameraCard(${cameraCount})">Remove</button>
+            <h3>Camera Asset #${cameraCount}</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Zone / Location</label>
+                    <select required>
+                        <option value="">-- Select Location --</option>
+                        <option value="atm">ATM Lobby</option>
+                        <option value="vault">Main Vault</option>
+                        <option value="teller">Teller Counter</option>
+                        <option value="entrance">Main Entrance</option>
+                        <option value="perimeter">External Perimeter</option>
+                        <option value="server">Server/IT Room</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Camera ID / Tag</label>
+                    <input type="text" placeholder="e.g. CAM-01" required>
+                </div>
+                <div class="form-group">
+                    <label>Existing Brand</label>
+                    <input type="text" placeholder="e.g. Hikvision, Axis" required>
+                </div>
+                <div class="form-group">
+                    <label>Existing Model</label>
+                    <input type="text" placeholder="e.g. DS-2CD2047G2" required>
+                </div>
+                <div class="form-group">
+                    <label>Camera Type</label>
+                    <select required>
+                        <option value="dome">Dome</option>
+                        <option value="bullet">Bullet</option>
+                        <option value="ptz">PTZ</option>
+                        <option value="fisheye">Fisheye / 360</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Power Supply / Redundancy</label>
+                    <select>
+                        <option value="poe">PoE Switch Power</option>
+                        <option value="local_ups">Local 12V + UPS</option>
+                        <option value="none">No Redundancy</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Upgrade Required?</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="upgrade_${cameraCount}" value="yes" onchange="toggleUpgradeField(${cameraCount}, true)"> Yes
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="upgrade_${cameraCount}" value="no" checked onchange="toggleUpgradeField(${cameraCount}, false)"> No
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group" id="upgrade_spec_group_${cameraCount}" style="display: none;">
+                    <label>Target Upgrade Specification</label>
+                    <input type="text" placeholder="e.g. Upgrade to 4K Smart PTZ / DeepinMind Terminal">
+                </div>
+                <div class="form-group full-width">
+                    <label>Camera Installation Image</label>
+                    <div class="file-upload">
+                        <label for="cam_pic_${cameraCount}">📸 Tap to Take Physical Camera Photo</label>
+                        <input type="file" id="cam_pic_${cameraCount}" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                        <img class="preview-img" id="preview_cam_pic_${cameraCount}">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Auditor Field Comments</label>
+                    <textarea placeholder="Note lighting flaws, structural obstructions, blind spots..."></textarea>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    }
+
+    function removeCameraCard(id) {
+        const card = document.getElementById(`camera_card_${id}`);
+        if(card) card.remove();
+    }
+
+    function toggleUpgradeField(id, show) {
+        const field = document.getElementById(`upgrade_spec_group_${id}`);
+        if(field) field.style.display = show ? 'flex' : 'none';
+    }
+
+    function previewImage(input) {
+        const preview = input.nextElementSibling;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Initialize with one camera card on load
+    window.onload = addCameraCard;
+</script>
+
+</body>
+</html>
