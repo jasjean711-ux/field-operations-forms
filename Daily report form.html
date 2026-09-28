@@ -963,7 +963,7 @@
       selector.replaceChildren(new Option('Select technician', ''));
       const { data: technicians, error } = await supabaseClient
         .from('user_profiles')
-        .select('id, display_name, company')
+        .select('id, display_name, email, company')
         .eq('role', 'technician')
         .eq('active', true)
         .eq('company', company)
@@ -971,12 +971,16 @@
       if (error) throw error;
 
       (technicians || []).forEach(technician => {
-        const option = new Option(technician.display_name, technician.id);
+        const label = technician.email
+          ? `${technician.display_name} - ${technician.email}`
+          : technician.display_name;
+        const option = new Option(label, technician.id);
+        option.dataset.displayName = technician.display_name;
         selector.add(option);
       });
       selector.onchange = () => {
         const selected = selector.options[selector.selectedIndex];
-        document.getElementById('technicianName').value = selected?.textContent || '';
+        document.getElementById('technicianName').value = selected?.dataset.displayName || '';
       };
     }
 
