@@ -109,6 +109,7 @@
 
       <!-- Header Actions -->
       <div class="flex items-center gap-2 no-print">
+        <button id="accountButton" type="button" onclick="handleAccountAction()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition">Sign in</button>
         <button type="button" onclick="openHistory()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span class="hidden md:inline">View History</span>
@@ -156,6 +157,13 @@
               <option value="VMA">VMA</option>
               <option value="ICTS">ICTS</option>
               <option value="EIDC">EIDC</option>
+            </select>
+          </div>
+
+          <div id="technicianAssignmentField" class="hidden">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Assign Technician <span class="text-rose-400">*</span></label>
+            <select id="assignedTechnician" class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white transition">
+              <option value="">Select technician</option>
             </select>
           </div>
 
@@ -761,13 +769,34 @@
     </div>
   </div>
 
+  <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
+    <form id="loginForm" onsubmit="handleLogin(event)" class="bg-slate-800 border border-slate-700 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div>
+        <h3 class="text-lg font-bold text-white">Sign in</h3>
+        <p class="text-xs text-slate-400 mt-1">Use your technician or administrator account.</p>
+      </div>
+      <label class="block text-xs font-medium text-slate-300">Email
+        <input id="loginEmail" type="email" required autocomplete="username" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <label class="block text-xs font-medium text-slate-300">Password
+        <input id="loginPassword" type="password" required autocomplete="current-password" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <p id="loginError" class="hidden text-xs text-rose-300"></p>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeLoginModal()" class="px-3 py-2 text-xs text-slate-300 bg-slate-700 rounded-lg">Cancel</button>
+        <button id="loginSubmit" type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 rounded-lg">Sign in</button>
+      </div>
+    </form>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://khhvwjvajqigdsnbnzui.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaHZ3anZvajFpZ2RzbmJuenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNzk3NjEsImV4cCI6MjA4Njk1NTc2MX0.4ohysH621jBmQZUNV24FlLdXbCUNP-3C0pJmrcoR3TI';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUserContext = null;
 
     // Initialize default values and UI controls on window load
-    window.onload = function () {
+    window.onload = async function () {
       // Set default current date-time
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -779,6 +808,17 @@
 
       // Populate default hardware log rows
       initDefaultHardwareRows();
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        try {
+          currentUserContext = await getUserContext(session.user);
+          await configureRoleControls(currentUserContext);
+          updateAccountButton();
+        } catch (error) {
+          console.error('Could not load user profile:', error);
+        }
+      }
     };
 
     // Initialize Default Hardware Log Table Entries
@@ -879,20 +919,143 @@
       return document.querySelector(`input[name="${name}"]:checked`)?.value || null;
     }
 
-    async function signInIfNeeded() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) return session.user;
-
-      const email = window.prompt('Enter your technician email:');
-      const password = window.prompt('Enter your password:');
-      if (!email || !password) throw new Error('Sign-in is required before saving a ticket.');
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    async function getUserContext(user) {
+      const { data: profile, error } = await supabaseClient
+        .from('user_profiles')
+        .select('id, display_name, company, role, active')
+        .eq('id', user.id)
+        .single();
       if (error) throw error;
-      return data.user;
+      if (!profile.active) throw new Error('This account is inactive. Contact your administrator.');
+      return { user, profile };
     }
 
-    function buildTicketPayload(user) {
+    async function loadTechnicians(company) {
+      const selector = document.getElementById('assignedTechnician');
+      selector.replaceChildren(new Option('Select technician', ''));
+      const { data: technicians, error } = await supabaseClient
+        .from('user_profiles')
+        .select('id, display_name, company')
+        .eq('role', 'technician')
+        .eq('active', true)
+        .eq('company', company)
+        .order('display_name');
+      if (error) throw error;
+
+      (technicians || []).forEach(technician => {
+        const option = new Option(technician.display_name, technician.id);
+        selector.add(option);
+      });
+      selector.onchange = () => {
+        const selected = selector.options[selector.selectedIndex];
+        document.getElementById('technicianName').value = selected?.textContent || '';
+      };
+    }
+
+    async function configureRoleControls(context) {
+      const isAdmin = context.profile.role === 'admin';
+      const assignmentField = document.getElementById('technicianAssignmentField');
+      const companyField = document.getElementById('company');
+      const technicianName = document.getElementById('technicianName');
+      assignmentField.classList.toggle('hidden', !isAdmin);
+
+      if (isAdmin) {
+        technicianName.readOnly = false;
+        companyField.disabled = false;
+        companyField.onchange = () => loadTechnicians(companyField.value).catch(error => alert(error.message));
+        if (companyField.value) await loadTechnicians(companyField.value);
+      } else {
+        companyField.value = context.profile.company;
+        companyField.disabled = true;
+        technicianName.value = context.profile.display_name;
+        technicianName.readOnly = true;
+      }
+      updateAccountButton();
+    }
+
+    async function signInIfNeeded() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        currentUserContext = await getUserContext(session.user);
+        await configureRoleControls(currentUserContext);
+        return currentUserContext;
+      }
+      openLoginModal();
+      return new Promise((resolve, reject) => {
+        window.pendingSignIn = { resolve, reject };
+      });
+    }
+
+    function updateAccountButton() {
+      const button = document.getElementById('accountButton');
+      if (button) button.textContent = currentUserContext ? 'Sign out' : 'Sign in';
+    }
+
+    function openLoginModal() {
+      document.getElementById('loginError').classList.add('hidden');
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('loginEmail').focus();
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+      if (window.pendingSignIn) {
+        window.pendingSignIn.reject(new Error('Sign-in cancelled.'));
+        window.pendingSignIn = null;
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const button = document.getElementById('loginSubmit');
+      const errorMessage = document.getElementById('loginError');
+      button.disabled = true;
+      button.textContent = 'Signing in...';
+      errorMessage.classList.add('hidden');
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: document.getElementById('loginEmail').value.trim(),
+          password: document.getElementById('loginPassword').value
+        });
+        if (error) throw error;
+        currentUserContext = await getUserContext(data.user);
+        await configureRoleControls(currentUserContext);
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginModal').classList.add('hidden');
+        if (window.pendingSignIn) {
+          window.pendingSignIn.resolve(currentUserContext);
+          window.pendingSignIn = null;
+        }
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Sign in';
+      }
+    }
+
+    async function handleAccountAction() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          const { error } = await supabaseClient.auth.signOut();
+          if (error) throw error;
+          currentUserContext = null;
+          document.getElementById('technicianAssignmentField').classList.add('hidden');
+          document.getElementById('technicianName').readOnly = false;
+          document.getElementById('company').disabled = false;
+          updateAccountButton();
+        } else {
+          await signInIfNeeded();
+        }
+      } catch (error) {
+        if (error.message !== 'Sign-in cancelled.') alert(error.message);
+      }
+    }
+
+    function buildTicketPayload(context) {
+      const { user, profile } = context;
       const techName = document.getElementById('technicianName').value.trim();
       const ticketNum = document.getElementById('ticketNumber').value.trim();
       const status = document.getElementById('ticketStatus').value;
@@ -906,8 +1069,16 @@
         return null;
       }
 
+      const assignedTo = profile.role === 'admin'
+        ? document.getElementById('assignedTechnician').value
+        : user.id;
+      if (!assignedTo) {
+        alert('Select a technician before saving this ticket.');
+        return null;
+      }
+
       return {
-        created_by: user.id,
+        assigned_to: assignedTo,
         company: document.getElementById('company').value,
         technician_name: techName,
         ticket_number: ticketNum,
@@ -939,8 +1110,8 @@
     // Create a ticket or update the existing ticket number, then record its status history.
     async function submitTicket() {
       try {
-        const user = await signInIfNeeded();
-        const payload = buildTicketPayload(user);
+        const context = await signInIfNeeded();
+        const payload = buildTicketPayload(context);
         if (!payload) return;
 
         const { data: existingTicket, error: lookupError } = await supabaseClient
@@ -963,7 +1134,7 @@
         } else {
           const { data, error } = await supabaseClient
             .from('tickets')
-            .insert(payload)
+            .insert({ ...payload, created_by: context.user.id })
             .select('id, ticket_number')
             .single();
           if (error) throw error;
@@ -976,7 +1147,7 @@
             ticket_id: savedTicket.id,
             status: payload.ticket_status,
             notes: payload.daily_remarks,
-            updated_by: user.id
+            updated_by: context.user.id
           });
         if (historyError) throw historyError;
 
@@ -1022,7 +1193,7 @@
       content.innerHTML = '<p class="text-sm text-slate-400">Signing in and loading ticket history...</p>';
 
       try {
-        const user = await signInIfNeeded();
+        const context = await signInIfNeeded();
         const { data: tickets, error: ticketError } = await supabaseClient
           .from('tickets')
           .select('id, ticket_number, company, technician_name, location, ticket_status, updated_at, created_at')
@@ -1070,7 +1241,7 @@
                   <p class="text-xs text-slate-400 mt-1">Company: ${escapeHistoryText(ticket.company || 'Not assigned')} | Technician: ${escapeHistoryText(ticket.technician_name || 'Not assigned')}</p>
                   <p class="text-xs text-slate-500 mt-1">Location: ${escapeHistoryText(ticket.location || 'Not recorded')} | Last update: ${escapeHistoryText(formatHistoryDate(ticket.updated_at || ticket.created_at))}</p>
                 </div>
-                <span class="text-[11px] text-slate-500">${escapeHistoryText(user.email || '')}</span>
+                <span class="text-[11px] text-slate-500">${escapeHistoryText(context.user.email || '')}</span>
               </div>
               <div class="mt-4 space-y-2">${updateMarkup}</div>
             </article>`;
