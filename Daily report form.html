@@ -109,6 +109,8 @@
 
       <!-- Header Actions -->
       <div class="flex items-center gap-2 no-print">
+        <button id="inboundEmailButton" type="button" onclick="openInboundEmail()" class="hidden px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition">Inbound Job</button>
+        <button id="assignmentEmailButton" type="button" onclick="openAssignmentEmail()" class="hidden px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition">Assignment Email</button>
         <button id="accountButton" type="button" onclick="handleAccountAction()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition">Sign in</button>
         <button id="passwordChangeButton" type="button" onclick="openPasswordChange()" class="hidden px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition">Change Password</button>
         <button type="button" onclick="openHistory()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
@@ -258,6 +260,12 @@
             <input type="text" id="unitId" placeholder="e.g. Villa 12 / Apt 3B"
               class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500 transition">
           </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Job Location</label>
+              <input type="text" id="jobLocation" placeholder="Building, unit, or site location"
+                class="w-full px-3 py-2 text-sm bg-slate-900/90 border border-slate-700 rounded-lg focus:outline-none focus:border-brand-500 text-white placeholder-slate-500 transition">
+            </div>
 
           <!-- Network Node / Termination Point -->
           <div>
@@ -770,6 +778,68 @@
     </div>
   </div>
 
+  <div id="inboundEmailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55] flex items-center justify-center hidden p-4">
+    <form id="inboundEmailForm" onsubmit="captureInboundEmail(event)" class="bg-slate-800 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4">
+      <div>
+        <h3 class="text-lg font-bold text-white">Inbound Job Email</h3>
+        <p class="text-xs text-slate-400 mt-1">Copy the job details from Outlook. Saving creates an unassigned Open ticket.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="block text-xs font-medium text-slate-300">Company
+          <select id="emailJobCompany" required class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+            <option value="">Select company</option><option>EILA</option><option>VMA</option><option>ICTS</option><option>EIDC</option>
+          </select>
+        </label>
+        <label class="block text-xs font-medium text-slate-300">Ticket / Job Number
+          <input id="emailJobTicketNumber" required class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">From email
+          <input id="emailJobFrom" type="email" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">Received date and time
+          <input id="emailJobReceivedAt" type="datetime-local" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
+      </div>
+      <label class="block text-xs font-medium text-slate-300">Email subject
+        <input id="emailJobSubject" required class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <label class="block text-xs font-medium text-slate-300">Job location
+        <input id="emailJobLocation" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <label class="block text-xs font-medium text-slate-300">Email body / job details
+        <textarea id="emailJobBody" rows="6" required class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white"></textarea>
+      </label>
+      <p id="inboundEmailError" class="hidden text-xs text-rose-300"></p>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeInboundEmail()" class="px-3 py-2 text-xs text-slate-300 bg-slate-700 rounded-lg">Cancel</button>
+        <button id="inboundEmailSubmit" type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 rounded-lg">Save Open Ticket</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="assignmentEmailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55] flex items-center justify-center hidden p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div>
+        <h3 class="text-lg font-bold text-white">Assignment Email Draft</h3>
+        <p class="text-xs text-slate-400 mt-1">Review the message, then open it in your email app to send.</p>
+      </div>
+      <label class="block text-xs font-medium text-slate-300">To
+        <input id="assignmentEmailTo" readonly class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <label class="block text-xs font-medium text-slate-300">Subject
+        <input id="assignmentEmailSubject" readonly class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+      </label>
+      <label class="block text-xs font-medium text-slate-300">Message
+        <textarea id="assignmentEmailBody" rows="7" readonly class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white"></textarea>
+      </label>
+      <p id="assignmentEmailError" class="hidden text-xs text-rose-300"></p>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeAssignmentEmail()" class="px-3 py-2 text-xs text-slate-300 bg-slate-700 rounded-lg">Close</button>
+        <button type="button" onclick="openOutlookDraft()" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 rounded-lg">Open email draft</button>
+      </div>
+    </div>
+  </div>
+
   <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
     <form id="loginForm" onsubmit="handleLogin(event)" class="bg-slate-800 border border-slate-700 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
       <div>
@@ -976,12 +1046,155 @@
           : technician.display_name;
         const option = new Option(label, technician.id);
         option.dataset.displayName = technician.display_name;
+        option.dataset.email = technician.email || '';
         selector.add(option);
       });
+      if (!technicians?.length) {
+        const emptyOption = new Option(`No active ${company} technician profiles found`, '');
+        emptyOption.disabled = true;
+        selector.add(emptyOption);
+      }
       selector.onchange = () => {
         const selected = selector.options[selector.selectedIndex];
         document.getElementById('technicianName').value = selected?.dataset.displayName || '';
       };
+    }
+
+    function openInboundEmail() {
+      if (currentUserContext?.profile.role !== 'admin') return;
+      const receivedInput = document.getElementById('emailJobReceivedAt');
+      if (!receivedInput.value) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        receivedInput.value = now.toISOString().slice(0, 16);
+      }
+      document.getElementById('inboundEmailError').classList.add('hidden');
+      document.getElementById('inboundEmailModal').classList.remove('hidden');
+    }
+
+    function closeInboundEmail() {
+      document.getElementById('inboundEmailModal').classList.add('hidden');
+    }
+
+    async function captureInboundEmail(event) {
+      event.preventDefault();
+      const errorText = document.getElementById('inboundEmailError');
+      const submitButton = document.getElementById('inboundEmailSubmit');
+      errorText.classList.add('hidden');
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving...';
+
+      try {
+        const context = await signInIfNeeded();
+        if (context.profile.role !== 'admin') throw new Error('Only administrators can capture inbound job emails.');
+
+        const ticketNumber = document.getElementById('emailJobTicketNumber').value.trim();
+        const company = document.getElementById('emailJobCompany').value;
+        const sender = document.getElementById('emailJobFrom').value.trim();
+        const subject = document.getElementById('emailJobSubject').value.trim();
+        const location = document.getElementById('emailJobLocation').value.trim();
+        const body = document.getElementById('emailJobBody').value.trim();
+        const receivedValue = document.getElementById('emailJobReceivedAt').value;
+
+        const { data: duplicate, error: duplicateError } = await supabaseClient
+          .from('tickets')
+          .select('id')
+          .eq('ticket_number', ticketNumber)
+          .limit(1)
+          .maybeSingle();
+        if (duplicateError) throw duplicateError;
+        if (duplicate) throw new Error('That ticket number already exists. Open it from Ticket History instead of creating a duplicate.');
+
+        const { error } = await supabaseClient.from('tickets').insert({
+          ticket_number: ticketNumber,
+          company,
+          location,
+          client_email: sender || null,
+          job_description: `${subject}\n\n${body}`,
+          ticket_status: 'Open',
+          source_email_from: sender || null,
+          source_email_subject: subject,
+          source_email_received_at: receivedValue ? new Date(receivedValue).toISOString() : new Date().toISOString(),
+          source_email_body: body,
+          created_by: context.user.id,
+          updated_at: new Date().toISOString()
+        });
+        if (error) throw error;
+
+        document.getElementById('company').value = company;
+        await loadTechnicians(company);
+        document.getElementById('ticketNumber').value = ticketNumber;
+        document.getElementById('jobLocation').value = location;
+        document.getElementById('dailyRemarks').value = `${subject}\n\n${body}`;
+        closeInboundEmail();
+        document.getElementById('inboundEmailForm').reset();
+        alert('Inbound email saved as an Open ticket. Select a technician and submit the report to assign it.');
+      } catch (error) {
+        errorText.textContent = error.message;
+        errorText.classList.remove('hidden');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Open Ticket';
+      }
+    }
+
+    function openAssignmentEmail() {
+      const context = currentUserContext;
+      if (context?.profile.role !== 'admin') return;
+      const selector = document.getElementById('assignedTechnician');
+      const technician = selector.options[selector.selectedIndex];
+      const email = technician?.dataset.email;
+      const errorText = document.getElementById('assignmentEmailError');
+      errorText.classList.add('hidden');
+      if (!technician?.value || !email) {
+        errorText.textContent = 'Choose a technician with an email address for the selected company first.';
+        errorText.classList.remove('hidden');
+        document.getElementById('assignmentEmailModal').classList.remove('hidden');
+        return;
+      }
+
+      const ticketNumber = document.getElementById('ticketNumber').value.trim();
+      if (!ticketNumber) {
+        errorText.textContent = 'Enter the ticket number before preparing the assignment email.';
+        errorText.classList.remove('hidden');
+        document.getElementById('assignmentEmailModal').classList.remove('hidden');
+        return;
+      }
+
+      const ticketStatus = document.getElementById('ticketStatus').value;
+      const company = document.getElementById('company').value;
+      const location = document.getElementById('jobLocation').value.trim();
+      const notes = document.getElementById('dailyRemarks').value.trim();
+      const subject = `Job assigned: ${ticketNumber}`;
+      const body = [
+        `Hello ${technician.dataset.displayName || technician.textContent},`,
+        '',
+        `A ${company} job has been assigned to you.`,
+        `Ticket: ${ticketNumber}`,
+        `Status: ${ticketStatus}`,
+        `Location: ${location || 'See ticket details'}`,
+        '',
+        'Job details:',
+        notes || 'Please review the ticket details in the Field Operations form.',
+        '',
+        'Please update the ticket status and work notes in the form.'
+      ].join('\n');
+
+      document.getElementById('assignmentEmailTo').value = email;
+      document.getElementById('assignmentEmailSubject').value = subject;
+      document.getElementById('assignmentEmailBody').value = body;
+      window.assignmentEmailDraft = { email, subject, body };
+      document.getElementById('assignmentEmailModal').classList.remove('hidden');
+    }
+
+    function closeAssignmentEmail() {
+      document.getElementById('assignmentEmailModal').classList.add('hidden');
+    }
+
+    function openOutlookDraft() {
+      const draft = window.assignmentEmailDraft;
+      if (!draft) return;
+      window.location.href = `mailto:${draft.email}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`;
     }
 
     async function configureRoleControls(context) {
@@ -990,6 +1203,8 @@
       const companyField = document.getElementById('company');
       const technicianName = document.getElementById('technicianName');
       assignmentField.classList.toggle('hidden', !isAdmin);
+      document.getElementById('inboundEmailButton').classList.toggle('hidden', !isAdmin);
+      document.getElementById('assignmentEmailButton').classList.toggle('hidden', !isAdmin);
 
       if (isAdmin) {
         technicianName.readOnly = false;
@@ -1220,7 +1435,7 @@
         ticket_status: status,
         property_type: propertyType,
         unit_number: unitId,
-        location: [propertyType, unitId, terminationPoint].filter(Boolean).join(' - '),
+        location: document.getElementById('jobLocation').value.trim() || [propertyType, unitId, terminationPoint].filter(Boolean).join(' - '),
         network_node: terminationPoint,
         backbone_type: document.getElementById('backboneType').value,
         intercom_status: getCheckedValue('intercomStatus'),
@@ -1331,7 +1546,7 @@
         const context = await signInIfNeeded();
         const { data: tickets, error: ticketError } = await supabaseClient
           .from('tickets')
-          .select('id, ticket_number, company, technician_name, location, ticket_status, updated_at, created_at')
+          .select('id, ticket_number, company, technician_name, location, ticket_status, updated_at, created_at, source_email_from, source_email_subject, source_email_received_at, source_email_body')
           .order('updated_at', { ascending: false });
         if (ticketError) throw ticketError;
 
@@ -1364,6 +1579,17 @@
                   <p class="text-xs text-slate-400 mt-1">${escapeHistoryText(update.notes || 'No notes recorded')}</p>
                 </div>`).join('')
             : '<p class="text-xs text-slate-500">No status history recorded.</p>';
+          const inboundEmailMarkup = ticket.source_email_subject
+            ? `<details class="mt-3 border-t border-slate-700 pt-3">
+                <summary class="cursor-pointer text-xs font-semibold text-brand-300">View inbound email</summary>
+                <div class="mt-2 space-y-1 text-xs text-slate-400">
+                  <p>From: ${escapeHistoryText(ticket.source_email_from || 'Not recorded')}</p>
+                  <p>Subject: ${escapeHistoryText(ticket.source_email_subject)}</p>
+                  <p>Received: ${escapeHistoryText(formatHistoryDate(ticket.source_email_received_at))}</p>
+                  <p class="whitespace-pre-wrap pt-2">${escapeHistoryText(ticket.source_email_body || '')}</p>
+                </div>
+              </details>`
+            : '';
 
           return `
             <article class="border border-slate-700 rounded-xl bg-slate-900/60 p-4">
@@ -1378,6 +1604,7 @@
                 </div>
                 <span class="text-[11px] text-slate-500">${escapeHistoryText(context.user.email || '')}</span>
               </div>
+              ${inboundEmailMarkup}
               <div class="mt-4 space-y-2">${updateMarkup}</div>
             </article>`;
         }).join('');
