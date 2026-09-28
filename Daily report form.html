@@ -109,6 +109,10 @@
 
       <!-- Header Actions -->
       <div class="flex items-center gap-2 no-print">
+        <button type="button" onclick="openHistory()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span class="hidden md:inline">View History</span>
+        </button>
         <button type="button" onclick="resetForm()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
           <i class="fa-solid fa-rotate-left"></i>
           <span class="hidden md:inline">Reset</span>
@@ -734,6 +738,24 @@
     </div>
   </div>
 
+  <!-- Ticket History Modal -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-5xl w-full max-h-[90vh] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col">
+      <div class="flex items-center justify-between p-5 border-b border-slate-700">
+        <div>
+          <h3 class="text-lg font-bold text-white">Ticket History</h3>
+          <p class="text-xs text-slate-400">Tickets, assigned technicians, and status updates</p>
+        </div>
+        <button type="button" onclick="closeHistory()" class="p-2 text-slate-400 hover:text-white" aria-label="Close ticket history">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div id="historyContent" class="overflow-y-auto p-5 space-y-3">
+        <p class="text-sm text-slate-400">Loading ticket history...</p>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://khhvwjvajqigdsnbnzui.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaHZ3anZvajFpZ2RzbmJuenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNzk3NjEsImV4cCI6MjA4Njk1NTc2MX0.4ohysH621jBmQZUNV24FlLdXbCUNP-3C0pJmrcoR3TI';
@@ -967,6 +989,98 @@
         console.error('Ticket submission failed:', error);
         alert(`Ticket could not be saved: ${error.message}`);
       }
+    }
+
+    function formatHistoryDate(value) {
+      if (!value) return 'Not recorded';
+      return new Date(value).toLocaleString();
+    }
+
+    function escapeHistoryText(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      })[character]);
+    }
+
+    async function openHistory() {
+      const modal = document.getElementById('historyModal');
+      const content = document.getElementById('historyContent');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+      }, 10);
+      content.innerHTML = '<p class="text-sm text-slate-400">Signing in and loading ticket history...</p>';
+
+      try {
+        const user = await signInIfNeeded();
+        const { data: tickets, error: ticketError } = await supabaseClient
+          .from('tickets')
+          .select('id, ticket_number, company, technician_name, location, ticket_status, updated_at, created_at')
+          .order('updated_at', { ascending: false });
+        if (ticketError) throw ticketError;
+
+        const ticketIds = (tickets || []).map(ticket => ticket.id);
+        let updates = [];
+        if (ticketIds.length) {
+          const { data, error: updateError } = await supabaseClient
+            .from('ticket_updates')
+            .select('ticket_id, status, notes, updated_by, created_at')
+            .in('ticket_id', ticketIds)
+            .order('created_at', { ascending: false });
+          if (updateError) throw updateError;
+          updates = data || [];
+        }
+
+        if (!tickets?.length) {
+          content.innerHTML = '<p class="text-sm text-slate-400">No tickets have been saved yet.</p>';
+          return;
+        }
+
+        content.innerHTML = tickets.map(ticket => {
+          const ticketUpdates = updates.filter(update => update.ticket_id === ticket.id);
+          const updateMarkup = ticketUpdates.length
+            ? ticketUpdates.map(update => `
+                <div class="border-l-2 border-brand-500/50 pl-3 py-1">
+                  <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="font-semibold text-brand-300">${escapeHistoryText(update.status || 'Update')}</span>
+                    <span class="text-slate-500">${escapeHistoryText(formatHistoryDate(update.created_at))}</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-1">${escapeHistoryText(update.notes || 'No notes recorded')}</p>
+                </div>`).join('')
+            : '<p class="text-xs text-slate-500">No status history recorded.</p>';
+
+          return `
+            <article class="border border-slate-700 rounded-xl bg-slate-900/60 p-4">
+              <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="text-sm font-semibold text-white">Ticket ${escapeHistoryText(ticket.ticket_number || 'Unnumbered')}</h4>
+                    <span class="px-2 py-0.5 rounded text-[11px] bg-brand-500/20 text-brand-300 border border-brand-500/30">${escapeHistoryText(ticket.ticket_status || 'Unknown')}</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-1">Company: ${escapeHistoryText(ticket.company || 'Not assigned')} | Technician: ${escapeHistoryText(ticket.technician_name || 'Not assigned')}</p>
+                  <p class="text-xs text-slate-500 mt-1">Location: ${escapeHistoryText(ticket.location || 'Not recorded')} | Last update: ${escapeHistoryText(formatHistoryDate(ticket.updated_at || ticket.created_at))}</p>
+                </div>
+                <span class="text-[11px] text-slate-500">${escapeHistoryText(user.email || '')}</span>
+              </div>
+              <div class="mt-4 space-y-2">${updateMarkup}</div>
+            </article>`;
+        }).join('');
+      } catch (error) {
+        console.error('History loading failed:', error);
+        content.innerHTML = `<p class="text-sm text-rose-300">History could not be loaded: ${escapeHistoryText(error.message)}</p>`;
+      }
+    }
+
+    function closeHistory() {
+      const modal = document.getElementById('historyModal');
+      modal.classList.add('opacity-0');
+      modal.querySelector('div').classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
     // Close Modal Handler
