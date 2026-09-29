@@ -790,6 +790,15 @@
             <option value="">Select company</option><option>EILA</option><option>VMA</option><option>ICTS</option><option>EIDC</option>
           </select>
         </label>
+        <label class="block text-xs font-medium text-slate-300">Client / customer company
+          <input id="emailJobClientCompany" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">Contact person
+          <input id="emailJobContactName" autocomplete="name" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">Department
+          <input id="emailJobDepartment" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
+        </label>
         <label class="block text-xs font-medium text-slate-300">From email
           <input id="emailJobFrom" type="email" class="mt-1 w-full px-3 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white">
         </label>
@@ -1086,6 +1095,9 @@
         if (context.profile.role !== 'admin') throw new Error('Only administrators can capture inbound job emails.');
 
         const company = document.getElementById('emailJobCompany').value;
+        const clientCompany = document.getElementById('emailJobClientCompany').value.trim();
+        const contactName = document.getElementById('emailJobContactName').value.trim();
+        const department = document.getElementById('emailJobDepartment').value.trim();
         const sender = document.getElementById('emailJobFrom').value.trim();
         const subject = document.getElementById('emailJobSubject').value.trim();
         const location = document.getElementById('emailJobLocation').value.trim();
@@ -1094,6 +1106,9 @@
 
         const { data: savedTicket, error } = await supabaseClient.from('tickets').insert({
           company,
+          client_company: clientCompany || null,
+          client_contact_name: contactName || null,
+          client_department: department || null,
           location,
           client_email: sender || null,
           job_description: `${subject}\n\n${body}`,
@@ -1546,7 +1561,7 @@
         const context = await signInIfNeeded();
         const { data: tickets, error: ticketError } = await supabaseClient
           .from('tickets')
-          .select('id, ticket_number, company, technician_name, location, ticket_status, updated_at, created_at, source_email_from, source_email_subject, source_email_received_at, source_email_body')
+          .select('id, ticket_number, company, client_company, client_contact_name, client_department, technician_name, location, ticket_status, updated_at, created_at, source_email_from, source_email_subject, source_email_received_at, source_email_body')
           .order('updated_at', { ascending: false });
         if (ticketError) throw ticketError;
 
@@ -1584,6 +1599,8 @@
                 <summary class="cursor-pointer text-xs font-semibold text-brand-300">View inbound email</summary>
                 <div class="mt-2 space-y-1 text-xs text-slate-400">
                   <p>From: ${escapeHistoryText(ticket.source_email_from || 'Not recorded')}</p>
+                  <p>Client/company: ${escapeHistoryText(ticket.client_company || 'Not recorded')}</p>
+                  <p>Contact: ${escapeHistoryText(ticket.client_contact_name || 'Not recorded')} | Department: ${escapeHistoryText(ticket.client_department || 'Not recorded')}</p>
                   <p>Subject: ${escapeHistoryText(ticket.source_email_subject)}</p>
                   <p>Received: ${escapeHistoryText(formatHistoryDate(ticket.source_email_received_at))}</p>
                   <p class="whitespace-pre-wrap pt-2">${escapeHistoryText(ticket.source_email_body || '')}</p>
