@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field Desk</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="authView" class="auth-view">
+    <section class="auth-card">
+      <div class="brand-mark">FD</div>
+      <p class="eyebrow">Personal operations desk</p>
+      <h1>Field Desk</h1>
+      <p class="muted">Turn incoming service emails into clear, trackable work.</p>
+      <form id="loginForm">
+        <label>Email<input id="loginEmail" type="email" autocomplete="username" required></label>
+        <label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <p id="loginError" class="error"></p>
+        <button class="button primary" type="submit">Sign in</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark small">FD</span><strong>Field Desk</strong></div>
+      <nav><button class="nav-item active">Service board</button><button class="nav-item" id="newTicketNav">New ticket</button></nav>
+      <div class="sidebar-bottom"><span id="userEmail"></span><button id="signOut" class="text-button">Sign out</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><p class="eyebrow">Personal operations</p><h2>Service board</h2></div><button id="newTicketButton" class="button primary">New ticket</button></header>
+      <section class="stats"><div><span>Open</span><strong id="openCount">0</strong></div><div><span>Scheduled</span><strong id="scheduledCount">0</strong></div><div><span>Quotation</span><strong id="quoteCount">0</strong></div><div><span>Resolved</span><strong id="resolvedCount">0</strong></div></section>
+      <section class="toolbar"><input id="search" type="search" placeholder="Search ticket, case, client, location"><select id="statusFilter"><option value="">All statuses</option><option>New (email)</option><option>Open</option><option>Seen</option><option>Scheduled</option><option>Quotation Required</option><option>Closed / Resolved</option></select><button id="refresh" class="button secondary">Refresh</button></section>
+      <section class="board"><table><thead><tr><th>Ticket</th><th>Case</th><th>Client</th><th>Location</th><th>Job type</th><th>Status</th><th>Updated</th></tr></thead><tbody id="ticketRows"></tbody></table><div id="emptyState" class="empty hidden">No tickets match your search.</div></section>
+    </main>
+  </div>
+
+  <dialog id="ticketDialog"><form method="dialog" id="ticketForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow">Create from email</p><h2>New ticket</h2></div><button value="cancel" class="icon-button" aria-label="Close">×</button></div><p class="muted">Paste the message from the client email. The app will extract the key fields.</p><label>Incoming email<textarea id="emailText" rows="9" placeholder="Paste the full email here..."></textarea></label><div class="form-grid"><label>Company<input id="clientCompany"></label><label>External ticket number<input id="externalTicket"></label><label>Case number<input id="caseNumber"></label><label>Location<input id="location"></label><label class="wide">Job type / summary<input id="jobType"></label></div><p id="ticketError" class="error"></p><div class="dialog-actions"><button value="cancel" class="button secondary">Cancel</button><button id="saveTicket" type="submit" class="button primary">Create ticket</button></div></form></dialog>
+  <dialog id="detailDialog"><form method="dialog" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow">Ticket detail</p><h2 id="detailTitle"></h2></div><button value="cancel" class="icon-button" aria-label="Close">×</button></div><div id="detailBody"></div><div class="dialog-actions"><button value="cancel" class="button secondary">Close</button></div></form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
