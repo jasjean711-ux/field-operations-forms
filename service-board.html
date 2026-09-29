@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Service Board | Field Operations</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; --navy:#202020; --blue:#006bc7; --line:#d9dee5; --muted:#64748b; --bg:#f5f6f8; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:#172033; }
+    button, input, select { font:inherit; }
+    button, a { cursor:pointer; }
+    .shell { display:grid; grid-template-columns:182px 1fr; min-height:100vh; }
+    aside { background:#242424; color:#e8e8e8; }
+    .brand { padding:18px 8px; font-size:15px; font-weight:700; border-bottom:1px solid #3d3d3d; }
+    .nav { display:grid; gap:2px; padding:12px 0; }
+    .nav button { border:0; border-left:3px solid transparent; text-align:left; background:transparent; color:#ddd; padding:10px 8px; }
+    .nav button.active, .nav button:hover { background:#343434; border-left-color:#1887e6; color:#fff; }
+    .side-section { padding:24px 8px 8px; color:#aeb4bc; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+    main { min-width:0; }
+    .topbar { height:68px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 22px; gap:16px; }
+    .topbar h1 { margin:0; font-size:18px; }
+    .identity { color:var(--muted); font-size:12px; text-align:right; }
+    .content { padding:18px 22px 40px; }
+    .tabs { display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:16px; }
+    .tabs button { border:1px solid transparent; background:transparent; padding:10px 18px; color:#475569; }
+    .tabs button.active { background:#fff; color:var(--blue); border-color:var(--line); border-bottom-color:#fff; margin-bottom:-1px; }
+    .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .toolbar input, .toolbar select { min-height:34px; border:1px solid #cbd5e1; background:#fff; padding:6px 9px; border-radius:3px; color:#25324a; }
+    .toolbar input { min-width:240px; }
+    .toolbar button, .primary { min-height:34px; border:1px solid #b8c3d1; background:#fff; padding:6px 12px; color:#334155; border-radius:3px; }
+    .primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+    .board { background:#fff; border:1px solid var(--line); overflow:auto; }
+    table { width:100%; min-width:920px; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; color:#075cb0; font-weight:600; padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    td { padding:8px 10px; border-bottom:1px solid #e8ebef; white-space:nowrap; max-width:250px; overflow:hidden; text-overflow:ellipsis; }
+    tr:nth-child(even) { background:#f7f8fa; }
+    tr.ticket { cursor:pointer; }
+    tr.ticket:hover { background:#e8f2fd; }
+    .ticket-link { color:#075cb0; text-decoration:underline; font-weight:700; }
+    .status { display:inline-block; padding:3px 7px; border-radius:3px; font-weight:600; }
+    .status-open { background:#e8f2ff; color:#075cb0; }
+    .status-done { background:#e3f7e9; color:#16723c; }
+    .status-wait { background:#fff4d6; color:#8a5b00; }
+    .status-quote { background:#f4e8ff; color:#7136a3; }
+    .priority { width:12px; height:12px; display:inline-block; border-radius:1px; background:#f4d72d; vertical-align:middle; }
+    .priority.high { background:#e44bc7; }
+    .empty { padding:36px; text-align:center; color:var(--muted); }
+    .login { position:fixed; inset:0; background:rgba(10,18,30,.65); display:grid; place-items:center; z-index:5; }
+    .login.hidden { display:none; }
+    .login-card { width:min(390px, calc(100% - 32px)); background:#fff; padding:24px; border-radius:5px; box-shadow:0 18px 50px #0005; }
+    .login-card h2 { margin:0 0 5px; font-size:20px; }
+    .login-card p { color:var(--muted); font-size:13px; }
+    .login-card label { display:block; color:#334155; font-size:12px; margin-top:14px; }
+    .login-card input { width:100%; margin-top:5px; padding:9px; border:1px solid #cbd5e1; border-radius:3px; }
+    .login-card button { width:100%; margin-top:18px; padding:10px; }
+    .error { color:#b42318; font-size:12px; margin-top:10px; }
+    @media (max-width:720px) { .shell { grid-template-columns:1fr; } aside { display:none; } .content { padding:12px; } .topbar { padding:0 12px; } .toolbar input { min-width:100%; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">My Favorites</div>
+      <div class="nav">
+        <button class="active">Service Board</button>
+        <button>My Calendar</button>
+        <button>Companies</button>
+        <button>Contacts</button>
+        <button>All Tickets</button>
+      </div>
+      <div class="side-section">Workspace</div>
+      <div class="nav">
+        <button>Service Desk</button>
+        <button>Time &amp; Expense</button>
+        <button>Finance</button>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <h1>Service Board</h1>
+        <div class="identity"><span id="roleText">Not signed in</span><br><button id="accountButton" class="primary" type="button">Sign in</button></div>
+      </header>
+      <section class="content">
+        <div class="tabs"><button class="active">Service</button><button>All Tickets</button><button>My Tickets</button></div>
+        <div class="toolbar">
+          <input id="searchInput" type="search" placeholder="Search ticket, company, location, summary">
+          <select id="statusFilter"><option value="">All statuses</option><option>Open</option><option>Seen</option><option>Scheduled</option><option>Quotation Required</option><option>Closed / Resolved</option></select>
+          <select id="companyFilter"><option value="">All companies</option><option>EILA</option><option>VMA</option><option>ICTS</option><option>EIDC</option></select>
+          <button id="refreshButton" type="button">Refresh</button>
+          <a class="primary" href="Daily%20report%20form.html">Open report form</a>
+        </div>
+        <div class="board">
+          <table>
+            <thead><tr><th></th><th>Ticket #</th><th>Priority</th><th>Age</th><th>Status</th><th>Company</th><th>Schedule</th><th>Assigned technician</th><th>Summary description</th></tr></thead>
+            <tbody id="ticketRows"><tr><td colspan="9" class="empty">Sign in to load tickets.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="loginModal" class="login">
+    <form id="loginForm" class="login-card">
+      <h2>Sign in to Service Board</h2>
+      <p>Technicians see assigned tickets. Administrators see the full service board.</p>
+      <label>Email<input id="email" type="email" required autocomplete="username"></label>
+      <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+      <div id="loginError" class="error"></div>
+      <button class="primary" type="submit">Sign in</button>
+    </form>
+  </div>
+  <script>
+    const SUPABASE_URL = 'https://khhvwjvajqigdsnbnzui.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_DNO-I64XmvqELYnvVQNb1g_U0jK6Qel';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let tickets = [];
+    let profile = null;
+
+    const statusClass = status => {
+      if (status === 'Closed / Resolved') return 'status status-done';
+      if (status === 'Quotation Required') return 'status status-quote';
+      if (status === 'Scheduled') return 'status status-wait';
+      return 'status status-open';
+    };
+    const age = date => Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000));
+    const text = value => String(value || '').replace(/[&<>'"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[ch]);
+
+    function renderTickets() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const company = document.getElementById('companyFilter').value;
+      const visible = tickets.filter(ticket => {
+        const searchable = [ticket.ticket_number, ticket.company, ticket.location, ticket.job_description, ticket.technician_name].join(' ').toLowerCase();
+        return (!query || searchable.includes(query)) && (!status || ticket.ticket_status === status) && (!company || ticket.company === company);
+      });
+      const rows = document.getElementById('ticketRows');
+      if (!visible.length) { rows.innerHTML = '<tr><td colspan="9" class="empty">No tickets match these filters.</td></tr>'; return; }
+      rows.innerHTML = visible.map(ticket => `<tr class="ticket" data-id="${text(ticket.id)}">
+        <td><span class="priority ${ticket.ticket_status === 'Quotation Required' ? 'high' : ''}"></span></td>
+        <td><a class="ticket-link" href="Daily%20report%20form.html?ticket=${encodeURIComponent(ticket.ticket_number || '')}">${text(ticket.ticket_number || 'Pending')}</a></td>
+        <td>${ticket.ticket_status === 'Quotation Required' ? 'High' : 'Normal'}</td>
+        <td>${age(ticket.created_at)}d</td>
+        <td><span class="${statusClass(ticket.ticket_status)}">${text(ticket.ticket_status || 'Open')}</span></td>
+        <td>${text(ticket.company)}</td>
+        <td>${text(ticket.location || 'Not scheduled')}</td>
+        <td>${text(ticket.technician_name || 'Unassigned')}</td>
+        <td title="${text(ticket.job_description)}">${text(ticket.job_description || 'No description')}</td>
+      </tr>`).join('');
+    }
+
+    async function loadTickets() {
+      const { data, error } = await db.from('tickets').select('id, ticket_number, company, location, technician_name, ticket_status, job_description, created_at').order('created_at', { ascending: false });
+      if (error) throw error;
+      tickets = data || [];
+      renderTickets();
+    }
+
+    async function loadProfile(user) {
+      const result = await db.from('user_profiles').select('display_name, company, role, active').eq('id', user.id).single();
+      if (result.error) throw result.error;
+      if (!result.data.active) throw new Error('This account is inactive.');
+      profile = result.data;
+      document.getElementById('roleText').textContent = `${profile.display_name} - ${profile.role}`;
+      document.getElementById('accountButton').textContent = 'Sign out';
+      document.getElementById('loginModal').classList.add('hidden');
+      await loadTickets();
+    }
+
+    async function signIn(email, password) {
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await loadProfile(data.user);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      document.getElementById('loginError').textContent = '';
+      try { await signIn(document.getElementById('email').value.trim(), document.getElementById('password').value); }
+      catch (error) { document.getElementById('loginError').textContent = error.message; }
+    });
+    document.getElementById('accountButton').addEventListener('click', async () => {
+      if (!profile) { document.getElementById('loginModal').classList.remove('hidden'); return; }
+      await db.auth.signOut(); location.reload();
+    });
+    document.getElementById('refreshButton').addEventListener('click', () => loadTickets().catch(error => alert(error.message)));
+    document.getElementById('searchInput').addEventListener('input', renderTickets);
+    document.getElementById('statusFilter').addEventListener('change', renderTickets);
+    document.getElementById('companyFilter').addEventListener('change', renderTickets);
+
+    db.auth.getSession().then(async ({ data }) => {
+      if (data.session) {
+        try { await loadProfile(data.session.user); } catch { document.getElementById('loginModal').classList.remove('hidden'); }
+      }
+    });
+  </script>
+</body>
+</html>
