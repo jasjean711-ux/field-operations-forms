@@ -918,6 +918,7 @@
         try {
           currentUserContext = await getUserContext(session.user);
           await configureRoleControls(currentUserContext);
+          await loadExistingTicketFromUrl();
           updateAccountButton();
         } catch (error) {
           console.error('Could not load user profile:', error);
@@ -1234,6 +1235,7 @@
       if (session) {
         currentUserContext = await getUserContext(session.user);
         await configureRoleControls(currentUserContext);
+        await loadExistingTicketFromUrl();
         return currentUserContext;
       }
       openLoginModal();
@@ -1379,6 +1381,7 @@
         if (error) throw error;
         currentUserContext = await getUserContext(data.user);
         await configureRoleControls(currentUserContext);
+        await loadExistingTicketFromUrl();
         document.getElementById('loginPassword').value = '';
         document.getElementById('loginModal').classList.add('hidden');
         if (window.pendingSignIn) {
@@ -1464,6 +1467,47 @@
         job_description: dailyRemarks,
         updated_at: new Date().toISOString()
       };
+    }
+
+    async function loadExistingTicketFromUrl() {
+      const ticketNumber = new URLSearchParams(window.location.search).get('ticket');
+      if (!ticketNumber) return;
+
+      const { data: ticket, error } = await supabaseClient
+        .from('tickets')
+        .select('ticket_number, company, technician_name, location, ticket_status, daily_remarks, job_description, property_type, unit_number, network_node, backbone_type, intercom_status, intercom_fault, wifi_status, wifi_fault, cctv_status, cctv_fault, dstv_status, dstv_equipment_type, dstv_fault, dstv_error_code, access_control_status, access_control_fault, overall_condition')
+        .eq('ticket_number', ticketNumber)
+        .maybeSingle();
+      if (error) throw error;
+      if (!ticket) throw new Error(`Ticket ${ticketNumber} was not found or is not assigned to this account.`);
+
+      document.getElementById('company').value = ticket.company || '';
+      document.getElementById('ticketNumber').value = ticket.ticket_number;
+      document.getElementById('technicianName').value = ticket.technician_name || currentUserContext.profile.display_name;
+      document.getElementById('ticketStatus').value = ticket.ticket_status || 'Open';
+      document.getElementById('propertyType').value = ticket.property_type || 'Apartment';
+      document.getElementById('unitId').value = ticket.unit_number || '';
+      document.getElementById('jobLocation').value = ticket.location || '';
+      document.getElementById('terminationPoint').value = ticket.network_node || 'Apartment DB';
+      document.getElementById('backboneType').value = ticket.backbone_type || 'Single-Mode Fiber (SMF)';
+      document.getElementById('dailyRemarks').value = ticket.daily_remarks || ticket.job_description || '';
+      document.getElementById('overallCondition').value = ticket.overall_condition || 'Installed';
+      ['intercomStatus', 'wifiStatus', 'cctvStatus', 'dstvStatus', 'accessStatus'].forEach(name => {
+        const value = ticket[{ intercomStatus: 'intercom_status', wifiStatus: 'wifi_status', cctvStatus: 'cctv_status', dstvStatus: 'dstv_status', accessStatus: 'access_control_status' }[name]];
+        const option = document.querySelector(`input[name="${name}"][value="${CSS.escape(value || '')}"]`);
+        if (option) option.checked = true;
+      });
+      const fields = {
+        intercomFault: ticket.intercom_fault,
+        wifiFault: ticket.wifi_fault,
+        cctvFault: ticket.cctv_fault,
+        dstvEquipmentType: ticket.dstv_equipment_type,
+        dstvFault: ticket.dstv_fault,
+        dstvErrorCode: ticket.dstv_error_code,
+        accessFault: ticket.access_control_fault
+      };
+      Object.entries(fields).forEach(([id, value]) => { if (value && document.getElementById(id)) document.getElementById(id).value = value; });
+      updateStatusBadge(ticket.ticket_status || 'Open');
     }
 
     // Create a ticket or update the existing ticket number, then record its status history.
